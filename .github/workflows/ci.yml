@@ -21,10 +21,10 @@ jobs:
       - name: Install opam
         id: install-opam
         run: |
-          CMD="sudo apt-get install --no-install-recommends opam"
+          CMD="sudo apt-get update && sudo apt-get install --no-install-recommends opam"
           echo "## Command: \`$CMD\`" >> README.md
           echo "\`\`\`" >> README.md
-          if $CMD; then
+          if sudo apt-get update && sudo apt-get install --no-install-recommends opam; then
             echo "Status: SUCCESS" >> README.md
             echo "\`\`\`" >> README.md
             echo "" >> README.md
@@ -146,11 +146,11 @@ jobs:
           echo "\`\`\`" >> README.md
           echo "" >> README.md
 
-      - name: Install core-unix
+      - name: Install core_unix
         if: steps.oxcaml-switch.outcome == 'success'
         run: |
           eval $(opam env)
-          CMD="opam install -y core-unix"
+          CMD="opam install -y core_unix"
           echo "## Command: \`$CMD\`" >> README.md
           echo "\`\`\`" >> README.md
           if $CMD; then

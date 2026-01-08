@@ -13,7 +13,105 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install and Init Opam
+        id: setup-opam
         run: |
           sudo apt-get install --no-install-recommends opam
           opam init --disable-sandboxing -y
           opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default
+
+      - name: Initialize Report
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          echo "# Build Status Report" > README.md
+          echo "Run Date: $(date)" >> README.md
+          echo "" >> README.md
+
+      - name: Install ocamlformat
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y ocamlformat"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md
+
+      - name: Install merlin
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y merlin"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md
+
+      - name: Install ocaml-lsp-server
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y ocaml-lsp-server"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md
+
+      - name: Install utop
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y utop"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md
+
+      - name: Install parallel
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y parallel"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md
+
+      - name: Install core-unix
+        if: steps.setup-opam.outcome == 'success'
+        run: |
+          eval $(opam env)
+          CMD="opam install -y core-unix"
+          echo "## Command: \`$CMD\`" >> README.md
+          echo "\`\`\`" >> README.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> README.md
+          else
+            echo "Status: FAILURE" >> README.md
+          fi
+          echo "\`\`\`" >> README.md
+          echo "" >> README.md

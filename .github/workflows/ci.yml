@@ -1,0 +1,19 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install and Init Opam
+        run: |
+          sudo apt-get install --no-install-recommends opam
+          opam init --disable-sandboxing -y
+          opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default

@@ -24,26 +24,25 @@ jobs:
       - name: Check Upstream
         id: check
         run: |
-          # Check for local test override
-          if [ "${{ github.event.inputs.local_test }}" == "true" ]; then
-             echo "Local test mode: Forcing run."
-             echo "hash=LOCAL-TEST-$(date +%s)" >> $GITHUB_OUTPUT
-             echo "skip=false" >> $GITHUB_OUTPUT
-             exit 0
-          fi
-
           # Fetch the latest commit hash from the upstream repository
           UPSTREAM_HASH=$(git ls-remote https://github.com/oxcaml/opam-repository.git main | cut -f1)
           echo "Upstream hash: $UPSTREAM_HASH"
           echo "hash=$UPSTREAM_HASH" >> $GITHUB_OUTPUT
-
           # Check if this hash is already in README.md
+
           if [ -f README.md ] && grep -q "$UPSTREAM_HASH" README.md; then
             echo "Upstream hash $UPSTREAM_HASH already processed. Exiting."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "New hash detected or README missing. Proceeding."
             echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check for local test override
+          if [ "${{ github.event.inputs.local_test }}" == "true" ]; then
+             echo "Local test mode: Forcing run."
+             echo "skip=false" >> $GITHUB_OUTPUT
+             exit 0
           fi
 
       - name: Initialize Temp Log
@@ -54,22 +53,29 @@ jobs:
           # Create a file to track failures
           touch FAILURES
 
-      - name: Install opam
-        id: install-opam
+      - name: Update apt
+        id: update-apt
         if: steps.check.outputs.skip != 'true'
         run: |
-          TICK='```'
-          CMD="sudo apt-get update && sudo apt-get install --no-install-recommends -y opam"
+          CMD="sudo apt-get update"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
-          if sudo apt-get update && sudo apt-get install --no-install-recommends -y opam; then
+          if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
+            exit 1
+          fi
+
+      - name: Install opam
+        id: install-opam
+        if: steps.check.outputs.skip != 'true' && steps.update-apt.outcome == 'success'
+        run: |
+          CMD="sudo apt-get install --no-install-recommends -y rsync opam"
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          if $CMD; then
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
+          else
+            echo "Status: FAILURE" >> CURRENT_LOG.md
             exit 1
           fi
 
@@ -77,18 +83,12 @@ jobs:
         id: init-opam
         if: steps.check.outputs.skip != 'true' && steps.install-opam.outcome == 'success'
         run: |
-          TICK='```'
-          CMD="opam init --disable-sandboxing -y"
+          CMD="opam init --bare --disable-sandboxing -y"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
             exit 1
           fi
 
@@ -96,121 +96,97 @@ jobs:
         id: oxcaml-switch
         if: steps.check.outputs.skip != 'true' && steps.init-opam.outcome == 'success'
         run: |
-          TICK='```'
           CMD="opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default -y"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            
-            echo "" >> CURRENT_LOG.md
             exit 1
           fi
 
       - name: Install ocamlformat
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
+          eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y ocamlformat"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
       - name: Install merlin
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
+          eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y merlin"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
       - name: Install ocaml-lsp-server
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
+          eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y ocaml-lsp-server"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
       - name: Install utop
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
+          eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y utop"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
       - name: Install parallel
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
+          eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y parallel"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
-      - name: Install core-unix
+      - name: Install core_unix
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
-          TICK='```'
-          eval $(opam env)
-          CMD="opam install -y core-unix"
+          eval $(opam env --switch=5.2.0+ox)
+          CMD="opam install -y core_unix"
           echo "Command: \`$CMD\`" >> CURRENT_LOG.md
-          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          
           echo "" >> CURRENT_LOG.md
 
       - name: Update README
@@ -229,7 +205,9 @@ jobs:
           HASH=${{ steps.check.outputs.hash }}
 
           # Create Header
-          echo "## $STATUS - $DATE - $HASH" > HEADER.md
+          echo "$DATE" >> HEADER.md
+          echo "$STATUS" >> HEADER.md
+          echo "$HASH" > HEADER.md
           echo "" >> HEADER.md
 
           # Concatenate: Header + Current Log + Existing README (if any)

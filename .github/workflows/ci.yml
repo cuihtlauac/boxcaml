@@ -78,6 +78,7 @@ jobs:
             echo "Status: FAILURE" >> CURRENT_LOG.md
             exit 1
           fi
+          echo "" >> CURRENT_LOG.md
 
       - name: Init opam
         id: init-opam
@@ -91,6 +92,7 @@ jobs:
             echo "Status: FAILURE" >> CURRENT_LOG.md
             exit 1
           fi
+          echo "" >> CURRENT_LOG.md
 
       - name: Create Switch
         id: oxcaml-switch
@@ -104,6 +106,7 @@ jobs:
             echo "Status: FAILURE" >> CURRENT_LOG.md
             exit 1
           fi
+          echo "" >> CURRENT_LOG.md
 
       - name: Install ocamlformat
         if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
@@ -205,9 +208,9 @@ jobs:
           HASH=${{ steps.check.outputs.hash }}
 
           # Create Header
-          echo "$DATE" >> HEADER.md
+          echo "$DATE" > HEADER.md
+          echo "$HASH" >> HEADER.md
           echo "$STATUS" >> HEADER.md
-          echo "$HASH" > HEADER.md
           echo "" >> HEADER.md
 
           # Concatenate: Header + Current Log + Existing README (if any)

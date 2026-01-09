@@ -58,24 +58,25 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: |
           CMD="sudo apt-get update"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             exit 1
           fi
+          echo "" >> CURRENT_LOG.md
 
       - name: Install opam
         id: install-opam
         if: steps.check.outputs.skip != 'true' && steps.update-apt.outcome == 'success'
         run: |
           CMD="sudo apt-get install --no-install-recommends -y rsync opam"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             exit 1
           fi
           echo "" >> CURRENT_LOG.md
@@ -85,11 +86,11 @@ jobs:
         if: steps.check.outputs.skip != 'true' && steps.install-opam.outcome == 'success'
         run: |
           CMD="opam init --bare --disable-sandboxing -y"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             exit 1
           fi
           echo "" >> CURRENT_LOG.md
@@ -99,11 +100,11 @@ jobs:
         if: steps.check.outputs.skip != 'true' && steps.init-opam.outcome == 'success'
         run: |
           CMD="opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default -y"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             exit 1
           fi
           echo "" >> CURRENT_LOG.md
@@ -113,11 +114,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y ocamlformat"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -127,11 +128,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y merlin"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -141,11 +142,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y ocaml-lsp-server"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -155,11 +156,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y utop"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -169,11 +170,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y parallel"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -183,11 +184,11 @@ jobs:
         run: |
           eval $(opam env --switch=5.2.0+ox)
           CMD="opam install -y core_unix"
-          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          echo "\`$CMD\`" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "✅" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "❌" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
           echo "" >> CURRENT_LOG.md
@@ -197,11 +198,11 @@ jobs:
         run: |
           # Determine status
           if [ "${{ steps.oxcaml-switch.outcome }}" != "success" ]; then
-             STATUS="Failure"
+             STATUS="❌ Failure"
           elif [ -s FAILURES ]; then
-             STATUS="Partial Success"
+             STATUS="⚠️ Partial Success"
           else
-             STATUS="Full Success"
+             STATUS="✅ Success"
           fi
 
           DATE=$(date)
@@ -209,7 +210,9 @@ jobs:
 
           # Create Header
           echo "$DATE" > HEADER.md
+          echo "" >> HEADER.md
           echo "$HASH" >> HEADER.md
+          echo "" >> HEADER.md
           echo "$STATUS" >> HEADER.md
           echo "" >> HEADER.md
 

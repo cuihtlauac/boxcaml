@@ -60,15 +60,15 @@ jobs:
         run: |
           TICK='```'
           CMD="sudo apt-get update && sudo apt-get install --no-install-recommends -y opam"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if sudo apt-get update && sudo apt-get install --no-install-recommends -y opam; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
             exit 1
           fi
@@ -79,15 +79,15 @@ jobs:
         run: |
           TICK='```'
           CMD="opam init --disable-sandboxing -y"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
             exit 1
           fi
@@ -98,15 +98,15 @@ jobs:
         run: |
           TICK='```'
           CMD="opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default -y"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
-            echo "$TICK" >> CURRENT_LOG.md
+            
             echo "" >> CURRENT_LOG.md
             exit 1
           fi
@@ -117,15 +117,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y ocamlformat"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Install merlin
@@ -134,15 +134,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y merlin"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Install ocaml-lsp-server
@@ -151,15 +151,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y ocaml-lsp-server"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Install utop
@@ -168,15 +168,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y utop"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Install parallel
@@ -185,15 +185,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y parallel"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Install core-unix
@@ -202,15 +202,15 @@ jobs:
           TICK='```'
           eval $(opam env)
           CMD="opam install -y core-unix"
-          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
-          echo "$TICK" >> CURRENT_LOG.md
+          echo "Command: \`$CMD\`" >> CURRENT_LOG.md
+          
           if $CMD; then
             echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
             echo "Status: FAILURE" >> CURRENT_LOG.md
             echo "fail" >> FAILURES
           fi
-          echo "$TICK" >> CURRENT_LOG.md
+          
           echo "" >> CURRENT_LOG.md
 
       - name: Update README
@@ -231,7 +231,7 @@ jobs:
           # Create Header
           echo "## $STATUS - $DATE - $HASH" > HEADER.md
           echo "" >> HEADER.md
-          
+
           # Concatenate: Header + Current Log + Existing README (if any)
           cat HEADER.md CURRENT_LOG.md > NEW_README.md
           if [ -f README.md ]; then

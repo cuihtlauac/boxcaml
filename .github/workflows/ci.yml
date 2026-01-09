@@ -1,7 +1,16 @@
 name: Build OxCaml Switch
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
+    inputs:
+      local_test:
+        description: 'Run locally (skip check & commit)'
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '0 4 * * *'
 
@@ -12,151 +21,228 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize Report
+      - name: Check Upstream
+        id: check
         run: |
-          echo "# Build Status Report" > README.md
-          echo "Run Date: $(date)" >> README.md
-          echo "" >> README.md
+          # Check for local test override
+          if [ "${{ github.event.inputs.local_test }}" == "true" ]; then
+             echo "Local test mode: Forcing run."
+             echo "hash=LOCAL-TEST-$(date +%s)" >> $GITHUB_OUTPUT
+             echo "skip=false" >> $GITHUB_OUTPUT
+             exit 0
+          fi
+
+          # Fetch the latest commit hash from the upstream repository
+          UPSTREAM_HASH=$(git ls-remote https://github.com/oxcaml/opam-repository.git main | cut -f1)
+          echo "Upstream hash: $UPSTREAM_HASH"
+          echo "hash=$UPSTREAM_HASH" >> $GITHUB_OUTPUT
+
+          # Check if this hash is already in README.md
+          if [ -f README.md ] && grep -q "$UPSTREAM_HASH" README.md; then
+            echo "Upstream hash $UPSTREAM_HASH already processed. Exiting."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "New hash detected or README missing. Proceeding."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Initialize Temp Log
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          # Create a temporary file for the current run's log
+          touch CURRENT_LOG.md
+          # Create a file to track failures
+          touch FAILURES
 
       - name: Install opam
         id: install-opam
+        if: steps.check.outputs.skip != 'true'
         run: |
-          CMD="sudo apt-get update && sudo apt-get install --no-install-recommends opam"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
-          if sudo apt-get update && sudo apt-get install --no-install-recommends opam; then
-            echo "Status: SUCCESS" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+          TICK='```'
+          CMD="sudo apt-get update && sudo apt-get install --no-install-recommends -y opam"
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
+          if sudo apt-get update && sudo apt-get install --no-install-recommends -y opam; then
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
             exit 1
           fi
 
       - name: Init opam
         id: init-opam
-        if: steps.install-opam.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.install-opam.outcome == 'success'
         run: |
+          TICK='```'
           CMD="opam init --disable-sandboxing -y"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
             exit 1
           fi
 
       - name: Create Switch
         id: oxcaml-switch
-        if: steps.init-opam.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.init-opam.outcome == 'success'
         run: |
-          CMD="opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          TICK='```'
+          CMD="opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default -y"
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
-            echo "\`\`\`" >> README.md
-            echo "" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "$TICK" >> CURRENT_LOG.md
+            echo "" >> CURRENT_LOG.md
             exit 1
           fi
 
       - name: Install ocamlformat
-        if: steps.oxcaml-switch.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
           CMD="opam install -y ocamlformat"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
 
       - name: Install merlin
-        if: steps.oxcaml-switch.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
           CMD="opam install -y merlin"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
 
       - name: Install ocaml-lsp-server
-        if: steps.oxcaml-switch.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
           CMD="opam install -y ocaml-lsp-server"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
 
       - name: Install utop
-        if: steps.oxcaml-switch.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
           CMD="opam install -y utop"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
 
       - name: Install parallel
-        if: steps.oxcaml-switch.outcome == 'success'
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
           CMD="opam install -y parallel"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
 
-      - name: Install core_unix
-        if: steps.oxcaml-switch.outcome == 'success'
+      - name: Install core-unix
+        if: steps.check.outputs.skip != 'true' && steps.oxcaml-switch.outcome == 'success'
         run: |
+          TICK='```'
           eval $(opam env)
-          CMD="opam install -y core_unix"
-          echo "## Command: \`$CMD\`" >> README.md
-          echo "\`\`\`" >> README.md
+          CMD="opam install -y core-unix"
+          echo "### Command: \`$CMD\"" >> CURRENT_LOG.md
+          echo "$TICK" >> CURRENT_LOG.md
           if $CMD; then
-            echo "Status: SUCCESS" >> README.md
+            echo "Status: SUCCESS" >> CURRENT_LOG.md
           else
-            echo "Status: FAILURE" >> README.md
+            echo "Status: FAILURE" >> CURRENT_LOG.md
+            echo "fail" >> FAILURES
           fi
-          echo "\`\`\`" >> README.md
-          echo "" >> README.md
+          echo "$TICK" >> CURRENT_LOG.md
+          echo "" >> CURRENT_LOG.md
+
+      - name: Update README
+        if: steps.check.outputs.skip != 'true' && always()
+        run: |
+          # Determine status
+          if [ "${{ steps.oxcaml-switch.outcome }}" != "success" ]; then
+             STATUS="Failure"
+          elif [ -s FAILURES ]; then
+             STATUS="Partial Success"
+          else
+             STATUS="Full Success"
+          fi
+
+          DATE=$(date)
+          HASH=${{ steps.check.outputs.hash }}
+
+          # Create Header
+          echo "## $STATUS - $DATE - $HASH" > HEADER.md
+          echo "" >> HEADER.md
+          
+          # Concatenate: Header + Current Log + Existing README (if any)
+          cat HEADER.md CURRENT_LOG.md > NEW_README.md
+          if [ -f README.md ]; then
+            cat README.md >> NEW_README.md
+          fi
+          mv NEW_README.md README.md
+
+      - name: Publish Report
+        if: steps.check.outputs.skip != 'true' && github.event.inputs.local_test != 'true' && always()
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update build status [skip ci]" && git push)

@@ -1,3 +1,31 @@
+Wed Jan 14 10:39:46 UTC 2026
+
+9e5dc24adbc9059c30fef2e1ed8e726e257049d1
+
+⚠️ Partial Success
+
+`sudo apt-get update`
+✅
+
+`sudo apt-get install --no-install-recommends -y rsync opam`
+✅
+
+`opam init --bare --disable-sandboxing -y`
+✅
+
+`opam switch create 5.2.0+ox --repos ox=git+https://github.com/oxcaml/opam-repository.git,default -y`
+✅
+
+`opam install -y ocamlformat`
+✅
+
+`opam install -y merlin`
+✅
+
+`opam install -y ocaml-lsp-server`
+❌
+
+`opam install -y utop`
 Fri Jan  9 11:55:10 UTC 2026
 
 535c466c935bb7076ff517e425cd08f8b2f6a356
